@@ -42,13 +42,18 @@ if data:
 
         st.divider()
 
-        # Hiển thị bảng LỊCH SỬ BIẾN ĐỘNG (Bỏ biểu đồ)
+        # Hiển thị bảng LỊCH SỬ BIẾN ĐỘNG
         if history:
             df_history = pd.DataFrame(history)
-            df_history = df_history.rename(columns={"time": "Thời gian", "sold": "Đã bán", "available": "Còn trống"})
+            
+            # Kiểm tra nếu API đã trả về cột detail thì mới đổi tên, tránh lỗi lúc mảng cũ chưa có detail
+            rename_cols = {"time": "Thời gian", "sold": "Đã bán", "available": "Còn trống"}
+            if "detail" in df_history.columns:
+                rename_cols["detail"] = "Biến động chi tiết"
+                
+            df_history = df_history.rename(columns=rename_cols)
             
             st.subheader("📋 Lịch sử biến động bán vé")
-            # In bảng hiển thị dòng mới nhất trên cùng
             st.dataframe(df_history, use_container_width=True, hide_index=True)
         else:
             st.info("Chưa có sự thay đổi vé nào được ghi nhận kể từ lúc bắt đầu theo dõi.")

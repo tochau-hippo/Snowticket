@@ -8,7 +8,6 @@ st_autorefresh(interval=60000, key="ticket_auto_fetch")
 
 st.set_page_config(page_title="Thống kê vé Ticketbox", page_icon="❄️", layout="centered")
 st.title("📊 Dashboard Theo Dõi Vé S'NOW (Live)")
-st.title("📊 Dashboard Theo Dõi Vé (Live)")
 
 # --- CODE TRIỆU HỒI TUYẾT RƠI VĨNH VIỄN ---
 snow_css = """

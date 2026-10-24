@@ -7,7 +7,7 @@ from streamlit_autorefresh import st_autorefresh
 # Tự động refresh 1 phút / lần
 st_autorefresh(interval=60000, key="river_auto_fetch")
 
-st.set_page_config(page_title="Thống kê show RIVER", page_icon="🐎", layout="wide")
+st.set_page_config(page_title="STNK - Mã Đáo Thành Công", page_icon="🐎", layout="wide")
 
 st.title("📊 Dashboard Theo Dõi Vé (Live)")
 st.caption("Sự kiện: Minishow MÃ ĐÁO THÀNH CÔNG - Neko Lê x S.T Sơn Thạch")

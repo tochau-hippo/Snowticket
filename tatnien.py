@@ -112,14 +112,28 @@ else:
                 else:
                     z["sold_out_at"] = "Đang bán"
 
-            df_zones = pd.DataFrame(zones).rename(columns={
+            df_zones = pd.DataFrame(zones)
+
+            # --- ĐOẠN BẢO HIỂM CHỐNG LỖI THIẾU CỘT ---
+            # Nếu data cũ chưa kịp update, tự động chèn số 0 vào cho khỏi sập web
+            for col in ["s1", "s2", "s3", "s4", "s5"]:
+                if col not in df_zones.columns:
+                    df_zones[col] = 0
+            # ----------------------------------------
+
+            df_zones = df_zones.rename(columns={
                 "name": "Khu", "price": "Giá", "total": "Tổng", 
                 "s1": "Trống(1)", "s2": "Hold(2)", "s3": "Xong(3)", "s4": "Khoá(4)", "s5": "Đang TT(5)",
                 "sold_out_at": "Trạng thái"
             })
-            df_zones["Giá"] = df_zones["Giá"].apply(lambda x: f"{x:,.0f} đ")
+            
+            # Khúc này format giá tiền
+            if "Giá" in df_zones.columns:
+                df_zones["Giá"] = df_zones["Giá"].apply(lambda x: f"{x:,.0f} đ")
+            
+            # Gắp đúng các cột cần thiết ra để hiển thị
             df_zones = df_zones[["Khu", "Trống(1)", "Hold(2)", "Xong(3)", "Khoá(4)", "Đang TT(5)", "Trạng thái"]]
-            st.dataframe(df_zones, use_container_width=True, hide_index=True, height=400)
+            st.dataframe(df_zones, use_container_width=True, hide_index=True, height=500)
 
     st.divider()
     st.subheader("🕵️ Lịch sử biến động trạng thái bất thường")

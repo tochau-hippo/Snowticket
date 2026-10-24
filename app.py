@@ -92,7 +92,7 @@ if token_input:
     data = fetch_ticket_data(token_input.strip())
     
     if data and "error" in data:
-        st.error(f"Lỗi API hoặc Token hết hạn (vui lòng copy Token mới): {data['error']}")
+        st.error(f"Nhập API mới nha")
     elif data:
         sections = data.get("data", {}).get("result", {}).get("sections", [])
         

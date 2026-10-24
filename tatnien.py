@@ -89,7 +89,12 @@ else:
     col3.metric("✅ Ghế còn trống", t_avail)
     
     st.divider()
-    left_col, right_col = st.columns([1.5, 1.2])
+    left_col, right_col = st.columns([3.5, 6.5])
+
+    st.divider()
+    
+    # Chia tỷ lệ: Bên trái (Lịch sử) chiếm 35%, Bên phải (Tình trạng) chiếm 65%
+    left_col, right_col = st.columns([3.5, 6.5])
 
     with left_col:
         st.subheader("📋 Lịch sử chốt đơn")
@@ -107,6 +112,7 @@ else:
             for z in zones:
                 z_name = z["name"]
                 if z_name in sold_out_times:
+                    # Chỗ này chính là logic tính thời lượng mỏi mòn chờ Sold Out và ghép vào chuỗi
                     rec = calc_soldout_minutes(sold_out_times[z_name])
                     z["sold_out_at"] = f"🔥 {sold_out_times[z_name]} ({rec})"
                 else:
@@ -114,12 +120,10 @@ else:
 
             df_zones = pd.DataFrame(zones)
 
-            # Bảo hiểm chống lỗi thiếu cột
             for col in ["s1", "s2", "s3", "s4", "s5"]:
                 if col not in df_zones.columns:
                     df_zones[col] = 0
 
-            # Đổi tên cột theo đúng yêu cầu mới
             df_zones = df_zones.rename(columns={
                 "name": "Khu", "price": "Giá", "total": "Tổng", 
                 "s1": "Chưa bán", 
@@ -133,9 +137,8 @@ else:
             if "Giá" in df_zones.columns:
                 df_zones["Giá"] = df_zones["Giá"].apply(lambda x: f"{x:,.0f} đ")
             
-            # Sắp xếp lại thứ tự: (1) -> (5) -> (3) -> (2) -> (4)
             df_zones = df_zones[["Khu", "Chưa bán", "Đang TT", "Sold", "Tạm lock", "Lock", "Trạng thái"]]
-            st.dataframe(df_zones, use_container_width=True, hide_index=True, height=500)
+            st.dataframe(df_zones, use_container_width=True, hide_index=True, height=400)
 
     st.divider()
     st.subheader("🕵️ Lịch sử biến động trạng thái bất thường")

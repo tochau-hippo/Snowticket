@@ -114,25 +114,27 @@ else:
 
             df_zones = pd.DataFrame(zones)
 
-            # --- ĐOẠN BẢO HIỂM CHỐNG LỖI THIẾU CỘT ---
-            # Nếu data cũ chưa kịp update, tự động chèn số 0 vào cho khỏi sập web
+            # Bảo hiểm chống lỗi thiếu cột
             for col in ["s1", "s2", "s3", "s4", "s5"]:
                 if col not in df_zones.columns:
                     df_zones[col] = 0
-            # ----------------------------------------
 
+            # Đổi tên cột theo đúng yêu cầu mới
             df_zones = df_zones.rename(columns={
                 "name": "Khu", "price": "Giá", "total": "Tổng", 
-                "s1": "Trống(1)", "s2": "Hold(2)", "s3": "Xong(3)", "s4": "Khoá(4)", "s5": "Đang TT(5)",
+                "s1": "Chưa bán", 
+                "s2": "Tạm lock", 
+                "s3": "Sold", 
+                "s4": "Lock", 
+                "s5": "Đang TT",
                 "sold_out_at": "Trạng thái"
             })
             
-            # Khúc này format giá tiền
             if "Giá" in df_zones.columns:
                 df_zones["Giá"] = df_zones["Giá"].apply(lambda x: f"{x:,.0f} đ")
             
-            # Gắp đúng các cột cần thiết ra để hiển thị
-            df_zones = df_zones[["Khu", "Trống(1)", "Hold(2)", "Xong(3)", "Khoá(4)", "Đang TT(5)", "Trạng thái"]]
+            # Sắp xếp lại thứ tự: (1) -> (5) -> (3) -> (2) -> (4)
+            df_zones = df_zones[["Khu", "Chưa bán", "Đang TT", "Sold", "Tạm lock", "Lock", "Trạng thái"]]
             st.dataframe(df_zones, use_container_width=True, hide_index=True, height=500)
 
     st.divider()

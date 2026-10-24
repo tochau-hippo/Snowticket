@@ -34,7 +34,7 @@ def calc_soldout_minutes(so_time_str):
         return "N/A"
 
 def status_label(status_code):
-    labels = {1: "Trống (1)", 2: "Hold (2)", 3: "Xong (3)", 4: "Khoá (4)", 5: "Đang TT (5)"}
+    labels = {1: "Chưa bán", 2: "Tạm lock", 3: "Sold", 4: "Lock", 5: "Đang TT"}
     return labels.get(status_code, f"Lỗi ({status_code})")
 
 def get_data():
@@ -138,8 +138,19 @@ else:
                 df_zones["Giá"] = df_zones["Giá"].apply(lambda x: f"{x:,.0f} đ")
             
             df_zones = df_zones[["Khu", "Chưa bán", "Đang TT", "Sold", "Tạm lock", "Lock", "Trạng thái"]]
-            st.dataframe(df_zones, use_container_width=True, hide_index=True, height=400)
-
+            st.dataframe(
+                df_zones, 
+                use_container_width=True, 
+                hide_index=True, 
+                height=400,
+                column_config={
+                    "Chưa bán": st.column_config.NumberColumn(alignment="center"),
+                    "Đang TT": st.column_config.NumberColumn(alignment="center"),
+                    "Sold": st.column_config.NumberColumn(alignment="center"),
+                    "Tạm lock": st.column_config.NumberColumn(alignment="center"),
+                    "Lock": st.column_config.NumberColumn(alignment="center")
+                }
+            )
     st.divider()
     st.subheader("🕵️ Lịch sử biến động trạng thái bất thường")
     st.caption("Ghi nhận các ghế bị Admin hold, BTC khoá, huỷ vé lậu, v.v. (Ngoài lộ trình 1 -> 5 -> 3)")

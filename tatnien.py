@@ -124,7 +124,11 @@ else:
 
             df_zones = pd.DataFrame(zones).rename(columns={
                 "name": "Khu vực", "price": "Giá vé", "total": "Tổng", 
-                "sold": "Đã bán", "available": "Trống", "sold_out_at": "Trạng thái (Sold Out)"
+                "s1": "Trống (1)", "s2": "Hold (2)", "s3": "TT (3)", "s4": "Bán/Khoá (4)",
+                "sold_out_at": "Sold Out Lúc"
             })
-            df_zones["Giá vé"] = df_zones["Giá vé"].apply(lambda x: f"{x:,.0f} đ")
+            
+            # Gỡ bớt mấy cột thừa cho đỡ chật ngang màn hình
+            df_zones = df_zones[["Khu vực", "Tổng", "Trống (1)", "Hold (2)", "TT (3)", "Bán/Khoá (4)", "Sold Out Lúc"]]
+            
             st.dataframe(df_zones, use_container_width=True, hide_index=True, height=500)

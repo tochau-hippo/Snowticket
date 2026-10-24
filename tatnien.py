@@ -6,14 +6,14 @@ from streamlit_autorefresh import st_autorefresh
 # Tự động refresh 1 phút / lần
 st_autorefresh(interval=60000, key="river_auto_fetch")
 
-st.set_page_config(page_title="Thống kê show RIVER", page_icon="🐎", layout="wide")
+st.set_page_config(page_title="STNK - Mã đáo thành công", page_icon="🐎", layout="wide")
 
 st.title("📊 Dashboard Theo Dõi Vé (Live)")
 st.caption("Sự kiện: Minishow MÃ ĐÁO THÀNH CÔNG - Neko Lê x S.T Sơn Thạch")
 
 # ==========================================
 # THAY ĐƯỜNG LINK WORKER MỚI CỦA SHOW RIVER VÀO ĐÂY:
-WORKER_URL = "https://river-worker.chinmuoi.workers.dev" 
+WORKER_URL = "https://tatnienriver.chinmuoi.workers.dev" 
 # ==========================================
 
 def get_data():

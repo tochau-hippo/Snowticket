@@ -108,49 +108,62 @@ else:
 
     with right_col:
         st.subheader("🎯 Tình trạng từng hạng vé")
-        if zones:
-            for z in zones:
-                z_name = z["name"]
-                if z_name in sold_out_times:
-                    # Chỗ này chính là logic tính thời lượng mỏi mòn chờ Sold Out và ghép vào chuỗi
-                    rec = calc_soldout_minutes(sold_out_times[z_name])
-                    z["sold_out_at"] = f"🔥 {sold_out_times[z_name]} ({rec})"
-                else:
-                    z["sold_out_at"] = "Đang bán"
+        
+        # --- BẢO HIỂM CHỐNG BẢNG TRẮNG KHI CHƯA MỞ BÁN ---
+        # Khi show chưa mở, API nhả mảng rỗng. Bơm data mặc định để giữ form bảng.
+        if not zones:
+            zones = [
+                {"name": "CHILL (Gift)", "price": 0, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
+                {"name": "RIVER (Standard)", "price": 850000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
+                {"name": "FLOW (Pre)", "price": 1250000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
+                {"name": "IN (VIP)", "price": 1750000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
+                {"name": "YOU (SVIP)", "price": 2350000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0}
+            ]
+        # ------------------------------------------------
 
-            df_zones = pd.DataFrame(zones)
+        for z in zones:
+            z_name = z["name"]
+            if z_name in sold_out_times:
+                rec = calc_soldout_minutes(sold_out_times[z_name])
+                z["sold_out_at"] = f"🔥 {sold_out_times[z_name]} ({rec})"
+            else:
+                # Nếu tổng vé = 0 thì báo "Chờ mở bán", ngược lại báo "Đang bán"
+                z["sold_out_at"] = "Đang bán" if z.get("total", 0) > 0 else "Chờ mở bán"
 
-            for col in ["s1", "s2", "s3", "s4", "s5"]:
-                if col not in df_zones.columns:
-                    df_zones[col] = 0
+        df_zones = pd.DataFrame(zones)
 
-            df_zones = df_zones.rename(columns={
-                "name": "Khu", "price": "Giá", "total": "Tổng", 
-                "s1": "Chưa bán", 
-                "s2": "Tạm lock", 
-                "s3": "Sold", 
-                "s4": "Lock", 
-                "s5": "Đang TT",
-                "sold_out_at": "Trạng thái"
-            })
-            
-            if "Giá" in df_zones.columns:
-                df_zones["Giá"] = df_zones["Giá"].apply(lambda x: f"{x:,.0f} đ")
-            
-            df_zones = df_zones[["Khu", "Chưa bán", "Đang TT", "Sold", "Tạm lock", "Lock", "Trạng thái"]]
-            st.dataframe(
-                df_zones, 
-                use_container_width=True, 
-                hide_index=True, 
-                height=400,
-                column_config={
-                    "Chưa bán": st.column_config.NumberColumn(alignment="center"),
-                    "Đang TT": st.column_config.NumberColumn(alignment="center"),
-                    "Sold": st.column_config.NumberColumn(alignment="center"),
-                    "Tạm lock": st.column_config.NumberColumn(alignment="center"),
-                    "Lock": st.column_config.NumberColumn(alignment="center")
-                }
-            )
+        for col in ["s1", "s2", "s3", "s4", "s5"]:
+            if col not in df_zones.columns:
+                df_zones[col] = 0
+
+        df_zones = df_zones.rename(columns={
+            "name": "Khu", "price": "Giá", "total": "Tổng", 
+            "s1": "Chưa bán", 
+            "s2": "Tạm lock", 
+            "s3": "Sold", 
+            "s4": "Lock", 
+            "s5": "Đang TT",
+            "sold_out_at": "Trạng thái"
+        })
+        
+        # Đã sắp xếp lại thứ tự cột m yêu cầu
+        df_zones = df_zones[["Khu", "Chưa bán", "Đang TT", "Sold", "Tạm lock", "Lock", "Trạng thái"]]
+        
+        # Code căn giữa (center) các cột số
+        st.dataframe(
+            df_zones, 
+            use_container_width=True, 
+            hide_index=True, 
+            height=400,
+            column_config={
+                "Chưa bán": st.column_config.NumberColumn(alignment="center"),
+                "Đang TT": st.column_config.NumberColumn(alignment="center"),
+                "Sold": st.column_config.NumberColumn(alignment="center"),
+                "Tạm lock": st.column_config.NumberColumn(alignment="center"),
+                "Lock": st.column_config.NumberColumn(alignment="center")
+            }
+        )
+        
     st.divider()
     st.subheader("🕵️ Lịch sử biến động trạng thái bất thường")
     st.caption("Ghi nhận các ghế bị Admin hold, BTC khoá, huỷ vé lậu, v.v. (Ngoài lộ trình 1 -> 5 -> 3)")

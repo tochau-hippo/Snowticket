@@ -4,13 +4,90 @@ import requests
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
+st.set_page_config(page_title="STNK - Mã Đáo Thành Công", page_icon="🐎", layout="wide")
+
+# Theme assets are resolved relative to this file, not the working directory.
+from pathlib import Path
+import base64
+
+ASSETS = Path(__file__).resolve().parent / "assets"
+
+@st.cache_data(show_spinner=False)
+def asset_data_uri(filename, mime):
+    path = ASSETS / filename
+    if not path.is_file():
+        return ""
+    return f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode("ascii")
+
+def apply_show_theme():
+    desktop = asset_data_uri("background-desktop.webp", "image/webp")
+    mobile = asset_data_uri("background-mobile.webp", "image/webp") or desktop
+    logo = asset_data_uri("show-logo.png", "image/png")
+    st.markdown("""
+    <style>
+    :root {color-scheme: dark;}
+    [data-testid="stAppViewContainer"] {background: #300504; isolation:isolate;}
+    [data-testid="stAppViewContainer"]::before {
+        content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+        background-color:#300504;
+        background-image:linear-gradient(rgba(22,2,2,.16),rgba(22,2,2,.30)),url("DESKTOP_ASSET");
+        background-size:cover; background-position:center center; background-repeat:no-repeat;
+    }
+    [data-testid="stMain"], [data-testid="stSidebar"] {background:transparent;}
+    [data-testid="stHeader"] {background:rgba(35,3,3,.88);}
+    .block-container {max-width:1480px; padding:3.5rem 3rem 3rem;}
+    .show-brand {text-align:center; margin:0 auto 2rem;}
+    .show-brand img {display:block; width:min(420px,78%); height:auto; margin:0 auto 1rem;}
+    .show-brand .show-subtitle {color:#f2e2c4; font-size:16px; line-height:1.6; margin:0;}
+    .show-brand .show-eyebrow {color:#d9b85e; letter-spacing:.16em; font-size:14px; margin:.5rem 0;}
+    h1,h2,h3 {font-family:Georgia,"Times New Roman",serif; color:#f2e2b9;}
+    h1 {font-size:clamp(1.6rem,3vw,2.2rem)!important;}
+    h2,h3 {line-height:1.35!important;}
+    [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p {color:#e0cbb2!important; opacity:1;}
+    [data-testid="stMetric"] {background:rgba(38,5,5,.94); border:1px solid #866634;
+        border-radius:12px; padding:20px 24px; min-height:128px;}
+    [data-testid="stMetricLabel"] {color:#eedbc0;}
+    [data-testid="stMetricValue"] {color:#f4db92; font-variant-numeric:tabular-nums;}
+    [data-testid="stAlert"] {background:rgba(38,5,5,.95); border:1px solid #866634; border-radius:10px;}
+    [data-testid="stAlertContainer"] {background:rgba(38,5,5,.96)!important;}
+    [data-testid="stAlert"] p {color:#f5e8d2;}
+    [data-testid="stDataFrame"] {border:1px solid #866634; border-radius:10px; overflow:hidden;}
+    hr {border-color:rgba(217,184,94,.32)!important; margin:1.8rem 0!important;}
+    button {min-height:44px;}
+    button:focus-visible,a:focus-visible {outline:2px solid #f4db92; outline-offset:3px;}
+    @media (max-width:767px) {
+        [data-testid="stAppViewContainer"]::before {
+            background-image:linear-gradient(rgba(22,2,2,.20),rgba(22,2,2,.35)),url("MOBILE_ASSET");
+        }
+        .block-container {padding:3.5rem 1.1rem 2rem;}
+        .show-brand {margin-bottom:1.5rem;}
+        .show-brand img {width:min(340px,94%);}
+        .show-brand .show-subtitle {font-size:14px;}
+        .show-brand .show-eyebrow {font-size:14px; letter-spacing:.1em;}
+        [data-testid="stMetric"] {padding:16px 20px; min-height:110px;}
+        [data-testid="stHorizontalBlock"] {flex-direction:column; gap:1rem;}
+        [data-testid="stColumn"] {width:100%!important; flex:1 1 auto!important; min-width:0!important;}
+    }
+    @media (prefers-reduced-motion:reduce) {
+        *,*::before,*::after {animation:none!important; transition:none!important; scroll-behavior:auto!important;}
+    }
+    </style>
+    """.replace("DESKTOP_ASSET", desktop).replace("MOBILE_ASSET", mobile), unsafe_allow_html=True)
+    if logo:
+        st.markdown(f'<div class="show-brand"><img src="{logo}" alt="Mã Đáo Thành Công">'
+                    '<p class="show-subtitle">NEKO LÊ · S.T SƠN THẠCH</p>'
+                    '<p class="show-eyebrow">THEO DÕI VÉ · MINISHOW</p></div>', unsafe_allow_html=True)
+    else:
+        st.title("Mã Đáo Thành Công")
+        st.caption("Neko Lê · S.T Sơn Thạch")
+
+apply_show_theme()
+
 # Tự động refresh 1 phút / lần
 st_autorefresh(interval=60000, key="river_auto_fetch")
 
-st.set_page_config(page_title="STNK - Mã Đáo Thành Công", page_icon="🐎", layout="wide")
-
-st.title("📊 Dashboard Theo Dõi Vé (Live)")
-st.caption("Sự kiện: Minishow MÃ ĐÁO THÀNH CÔNG - Neko Lê x S.T Sơn Thạch")
+st.subheader("Dashboard theo dõi vé")
+st.caption("Tự làm mới mỗi 60 giây · Dữ liệu qua Cloudflare Worker")
 
 # ==========================================
 WORKER_URL = "https://tatnienriver.chinmuoi.workers.dev" 
@@ -39,7 +116,10 @@ def status_label(status_code):
 
 def get_data():
     try:
-        return requests.get(WORKER_URL, timeout=10).json()
+        response = requests.get(WORKER_URL, timeout=10)
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else None
     except:
         return None
 
@@ -81,7 +161,7 @@ else:
             st.session_state.toasted_zones.remove("ALL_SHOW")
         st.info(f"⏳ **TRẠNG THÁI:** ĐANG BÁN ... (Giờ mở cửa: {OPENING_TIME_STR})")
 
-    st.markdown(f"**⏱ Dữ liệu cập nhật lúc:** `{last_check}`")
+    st.markdown(f"**⏱ Lần kiểm tra Worker:** `{last_check}`")
 
     col1, col2, col3 = st.columns(3)
     # Tự động cộng tổng toàn bộ số vé của tất cả các zone (không sót 1 vé nào)
@@ -90,9 +170,6 @@ else:
     col2.metric("🔥 Tổng ghế đã chốt", t_sold)
     col3.metric("✅ Ghế còn trống", t_avail)
     
-    st.divider()
-    left_col, _col = st.columns([3.5, 6.5])
-
     st.divider()
     
     # Chia tỷ lệ: Bên trái (Lịch sử) chiếm 35%, Bên phải (Tình trạng) chiếm 65%
@@ -117,7 +194,7 @@ else:
             zones = [
                 
                 {"name": "RIVER (Standard)", "price": 850000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
-                {"name": "FLOW (Pre)", "price": 1250000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
+                {"name": "FLOWS (Pre)", "price": 1250000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
                 {"name": "IN (VIP)", "price": 1750000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
                 {"name": "YOU (SVIP)", "price": 2350000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0}
             ]
@@ -158,17 +235,17 @@ else:
             hide_index=True, 
             height=400,
             column_config={
-                "Chưa bán": st.column_config.NumberColumn(alignment="center"),
-                "Đang TT": st.column_config.NumberColumn(alignment="center"),
-                "Sold": st.column_config.NumberColumn(alignment="center"),
-                "Tạm lock": st.column_config.NumberColumn(alignment="center"),
-                "Lock": st.column_config.NumberColumn(alignment="center")
+                "Chưa bán": st.column_config.NumberColumn(format="%d"),
+                "Đang TT": st.column_config.NumberColumn(format="%d"),
+                "Sold": st.column_config.NumberColumn(format="%d"),
+                "Tạm lock": st.column_config.NumberColumn(format="%d"),
+                "Lock": st.column_config.NumberColumn(format="%d")
             }
         )
         
     st.divider()
     st.subheader("🕵️ Lịch sử biến động trạng thái bất thường")
-    st.caption("Ghi nhận các ghế bị Admin hold, BTC khoá, huỷ vé lậu, v.v. (Ngoài lộ trình 1 -> 5 -> 3)")
+    st.caption("Các chuyển trạng thái ngoài luồng được Worker đánh dấu; không tự xác định nguyên nhân hoặc hành vi gian lận.")
     
     if anomaly_log:
         for anomaly in anomaly_log:

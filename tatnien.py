@@ -88,7 +88,7 @@ apply_show_theme()
 st_autorefresh(interval=60000, key="river_auto_fetch")
 
 st.subheader("Dashboard theo dõi vé")
-st.caption("Tự làm mới mỗi 60 giây · Dữ liệu qua Cloudflare Worker")
+
 
 # ==========================================
 WORKER_URL = "https://tatnienriver.chinmuoi.workers.dev" 

@@ -84,7 +84,9 @@ else:
     st.markdown(f"**⏱ Dữ liệu cập nhật lúc:** `{last_check}`")
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("🎫 Tổng quy mô rạp", t_sold + t_avail)
+    # Tự động cộng tổng toàn bộ số vé của tất cả các zone (không sót 1 vé nào)
+    t_total = sum([z.get("total", 0) for z in zones])
+    col1.metric("🎫 Tổng quy mô rạp", t_total)
     col2.metric("🔥 Tổng ghế đã chốt", t_sold)
     col3.metric("✅ Ghế còn trống", t_avail)
     

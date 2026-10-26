@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+from celebrations import new_milestones, render_celebration
 
 st.set_page_config(page_title="STNK - Mã Đáo Thành Công", page_icon="🐎", layout="wide")
 
@@ -93,8 +94,14 @@ st.caption("Tự làm mới mỗi 60 giây · Dữ liệu qua Cloudflare Worker"
 WORKER_URL = "https://tatnienriver.chinmuoi.workers.dev" 
 # ==========================================
 
-if "toasted_zones" not in st.session_state:
-    st.session_state.toasted_zones = set()
+# Session-local: reloading the tab/new session can replay the welcome.
+celebration_kind = None
+celebration_message = ""
+if not st.session_state.get("gold_welcome_seen", False):
+    celebration_kind = "welcome"
+    st.session_state.gold_welcome_seen = True
+if "gold_seen_marks" not in st.session_state:
+    st.session_state.gold_seen_marks = set()
 
 # Giờ mở bán cố định
 OPENING_TIME_STR = "12:00:00 26/10/2026"
@@ -138,27 +145,26 @@ else:
     sold_out_times = data.get("official_sold_out", {})
     anomaly_log = data.get("anomaly_log", [])
 
-    # Bắn pop-up góc màn hình
-    for z in zones:
-        z_name = z["name"]
-        if z_name in sold_out_times and z_name not in st.session_state.toasted_zones:
-            st.toast(f"🎇 Cháy vé: Đã SOLD OUT zone {z_name}!", icon="🔥")
-            st.session_state.toasted_zones.add(z_name)
-        elif z_name not in sold_out_times and z_name in st.session_state.toasted_zones:
-            st.session_state.toasted_zones.remove(z_name)
+    # First valid snapshot is a baseline: old sold-out marks do not fire on entry.
+    previous_marks = st.session_state.get("gold_previous_marks")
+    fresh_marks = new_milestones(sold_out_times, previous_marks, st.session_state.gold_seen_marks)
+    st.session_state.gold_previous_marks = dict(sold_out_times)
+    new_zones = [name for name in fresh_marks if name != "ALL_SHOW"]
+    if "ALL_SHOW" in fresh_marks:
+        celebration_kind = "show"
+        celebration_message = "Toàn bộ show Mã Đáo Thành Công đã sold out!"
+        if new_zones:
+            celebration_message += " Hạng vé: " + ", ".join(new_zones)
+    elif new_zones:
+        celebration_kind = "zone"
+        celebration_message = "Đã sold out hạng vé: " + ", ".join(new_zones)
 
-    # Hiệu ứng bong bóng toàn màn hình
+    # Persistent status is separate from the temporary 5-second notice.
     if "ALL_SHOW" in sold_out_times:
         so_str = sold_out_times["ALL_SHOW"]
         record_time = calc_soldout_minutes(so_str)
-        if "ALL_SHOW" not in st.session_state.toasted_zones:
-            st.balloons() 
-            st.toast(f"🏆 KỶ LỤC! SHOW ĐÃ SOLD OUT TRONG {record_time}!", icon="🎉")
-            st.session_state.toasted_zones.add("ALL_SHOW")
-        st.success(f"🎆 **TRẠNG THÁI: SOLD OUT TOÀN BỘ SHOW** LÚC {so_str} (KỶ LỤC: **{record_time}** KỂ TỪ KHI MỞ BÁN) 🎆")
+        st.success(f"✦ SHOW ĐÃ SOLD OUT lúc {so_str} · {record_time} kể từ khi mở bán")
     else:
-        if "ALL_SHOW" in st.session_state.toasted_zones:
-            st.session_state.toasted_zones.remove("ALL_SHOW")
         st.info(f"⏳ **TRẠNG THÁI:** ĐANG BÁN ... (Giờ mở cửa: {OPENING_TIME_STR})")
 
     st.markdown(f"**⏱ Lần kiểm tra Worker:** `{last_check}`")
@@ -263,3 +269,7 @@ else:
         st.dataframe(df_anomaly, use_container_width=True, hide_index=True)
     else:
         st.info("Chưa có hành vi nhảy trạng thái lạ nào bị phát hiện.")
+
+# One effect per update; show milestone takes priority over simultaneous zones.
+if celebration_kind:
+    render_celebration(celebration_kind, celebration_message)

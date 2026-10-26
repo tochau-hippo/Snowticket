@@ -89,7 +89,7 @@ else:
     col3.metric("✅ Ghế còn trống", t_avail)
     
     st.divider()
-    left_col, right_col = st.columns([3.5, 6.5])
+    left_col, _col = st.columns([3.5, 6.5])
 
     st.divider()
     
@@ -113,7 +113,7 @@ else:
         # Khi show chưa mở, API nhả mảng rỗng. Bơm data mặc định để giữ form bảng.
         if not zones:
             zones = [
-                {"name": "CHILL (Gift)", "price": 0, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
+                
                 {"name": "RIVER (Standard)", "price": 850000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
                 {"name": "FLOW (Pre)", "price": 1250000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},
                 {"name": "IN (VIP)", "price": 1750000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0},

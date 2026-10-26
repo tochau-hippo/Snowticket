@@ -6,22 +6,22 @@ import re
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from celebrations import new_milestones, render_celebration
-​
+
 st.set_page_config(page_title="STNK - Mã Đáo Thành Công", page_icon="🐎", layout="wide")
-​
+
 # Theme assets are resolved relative to this file, not the working directory.
 from pathlib import Path
 import base64
-​
+
 ASSETS = Path(__file__).resolve().parent / "assets"
-​
+
 @st.cache_data(show_spinner=False)
 def asset_data_uri(filename, mime):
     path = ASSETS / filename
     if not path.is_file():
         return ""
     return f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode("ascii")
-​
+
 def apply_show_theme():
     desktop = asset_data_uri("background-desktop.webp", "image/webp")
     mobile = asset_data_uri("background-mobile.webp", "image/webp") or desktop
@@ -83,7 +83,7 @@ def apply_show_theme():
     else:
         st.title("Mã Đáo Thành Công")
         st.caption("Neko Lê · S.T Sơn Thạch")
-​
+
 def format_history_detail(detail):
     """Escape API text, then decorate signed counts only; never change stored data."""
     text = html.escape(str(detail or ""))
@@ -94,8 +94,8 @@ def format_history_detail(detail):
         return (f'<span class="history-delta-{cls}" role="img" aria-label="{label} {count} vé">'
                 f'<span aria-hidden="true">{arrow} {count}</span></span>')
     return re.sub(r"(?<![\w\d])([+\-−])(\d+)(?!\d)", marker, text)
-​
-​
+
+
 def history_table_html(history):
     rows = []
     for row in history:
@@ -128,20 +128,20 @@ def history_table_html(history):
 <div class="history-panel" role="region" aria-label="Bảng lịch sử chốt đơn, có thể cuộn" tabindex="0">
 <table class="history-grid"><thead><tr><th scope="col">Thời gian</th><th scope="col">Đã bán</th><th scope="col">Trống</th><th scope="col">Chi tiết thay đổi</th></tr></thead>
 <tbody>''' + "".join(rows) + '</tbody></table></div>'
-​
-​
+
+
 apply_show_theme()
-​
+
 # Tự động refresh 1 phút / lần
 st_autorefresh(interval=60000, key="river_auto_fetch")
-​
-st.subheader("Dashboard theo dõi vé")
 
-​
+st.subheader("Dashboard theo dõi vé")
+st.caption("Tự làm mới mỗi 60 giây · Dữ liệu qua Cloudflare Worker")
+
 # ==========================================
 WORKER_URL = "https://tatnienriver.chinmuoi.workers.dev" 
 # ==========================================
-​
+
 # Session-local: reloading the tab/new session can replay the welcome.
 celebration_kind = None
 celebration_message = ""
@@ -150,11 +150,11 @@ if not st.session_state.get("gold_welcome_seen", False):
     st.session_state.gold_welcome_seen = True
 if "gold_seen_marks" not in st.session_state:
     st.session_state.gold_seen_marks = set()
-​
+
 # Giờ mở bán cố định
 OPENING_TIME_STR = "12:00:00 26/10/2026"
 opening_dt = datetime.strptime(OPENING_TIME_STR, "%H:%M:%S %d/%m/%Y")
-​
+
 def calc_soldout_minutes(so_time_str):
     try:
         so_dt = datetime.strptime(so_time_str, "%H:%M:%S %d/%m/%Y")
@@ -164,11 +164,11 @@ def calc_soldout_minutes(so_time_str):
         else: return f"{int(diff_mins)} phút"
     except:
         return "N/A"
-​
+
 def status_label(status_code):
     labels = {1: "Chưa bán", 2: "Tạm lock", 3: "Sold", 4: "Lock", 5: "Đang TT"}
     return labels.get(status_code, f"Lỗi ({status_code})")
-​
+
 def get_data():
     try:
         response = requests.get(WORKER_URL, timeout=10)
@@ -177,9 +177,9 @@ def get_data():
         return payload if isinstance(payload, dict) else None
     except:
         return None
-​
+
 data = get_data()
-​
+
 if not data:
     st.error("Không kết nối được tới máy chủ Cloudflare. Vui lòng kiểm tra lại link.")
 elif "message" in data:
@@ -192,7 +192,7 @@ else:
     zones = data.get("zones", [])
     sold_out_times = data.get("official_sold_out", {})
     anomaly_log = data.get("anomaly_log", [])
-​
+
     # First valid snapshot is a baseline: old sold-out marks do not fire on entry.
     previous_marks = st.session_state.get("gold_previous_marks")
     fresh_marks = new_milestones(sold_out_times, previous_marks, st.session_state.gold_seen_marks)
@@ -206,7 +206,7 @@ else:
     elif new_zones:
         celebration_kind = "zone"
         celebration_message = "Đã sold out hạng vé: " + ", ".join(new_zones)
-​
+
     # Persistent status is separate from the temporary 5-second notice.
     if "ALL_SHOW" in sold_out_times:
         so_str = sold_out_times["ALL_SHOW"]
@@ -214,9 +214,9 @@ else:
         st.success(f"✦ SHOW ĐÃ SOLD OUT lúc {so_str} · {record_time} kể từ khi mở bán")
     else:
         st.info(f"⏳ **TRẠNG THÁI:** ĐANG BÁN ... (Giờ mở cửa: {OPENING_TIME_STR})")
-​
+
     st.markdown(f"**⏱ Lần kiểm tra Worker:** `{last_check}`")
-​
+
     col1, col2, col3 = st.columns(3)
     # Tự động cộng tổng toàn bộ số vé của tất cả các zone (không sót 1 vé nào)
     t_total = sum([z.get("total", 0) for z in zones])
@@ -228,14 +228,14 @@ else:
     
     # Chia tỷ lệ: Bên trái (Lịch sử) chiếm 35%, Bên phải (Tình trạng) chiếm 65%
     left_col, right_col = st.columns([3.5, 6.5])
-​
+
     with left_col:
         st.subheader("📋 Lịch sử chốt đơn")
         if history:
             st.markdown(history_table_html(history), unsafe_allow_html=True)
         else:
             st.info("Chưa có biến động vé.")
-​
+
     with right_col:
         st.subheader("🎯 Tình trạng từng hạng vé")
         
@@ -250,7 +250,7 @@ else:
                 {"name": "YOU (SVIP)", "price": 2350000, "total": 0, "s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0, "sold": 0, "available": 0}
             ]
         # ------------------------------------------------
-​
+
         for z in zones:
             z_name = z["name"]
             if z_name in sold_out_times:
@@ -259,13 +259,13 @@ else:
             else:
                 # Nếu tổng vé = 0 thì báo "Chờ mở bán", ngược lại báo "Đang bán"
                 z["sold_out_at"] = "Đang bán" if z.get("total", 0) > 0 else "Chờ mở bán"
-​
+
         df_zones = pd.DataFrame(zones)
-​
+
         for col in ["s1", "s2", "s3", "s4", "s5"]:
             if col not in df_zones.columns:
                 df_zones[col] = 0
-​
+
         df_zones = df_zones.rename(columns={
             "name": "Khu", "price": "Giá", "total": "Tổng", 
             "s1": "Chưa bán", 
@@ -314,8 +314,7 @@ else:
         st.dataframe(df_anomaly, use_container_width=True, hide_index=True)
     else:
         st.info("Chưa có hành vi nhảy trạng thái lạ nào bị phát hiện.")
-​
+
 # One effect per update; show milestone takes priority over simultaneous zones.
 if celebration_kind:
     render_celebration(celebration_kind, celebration_message)
-​

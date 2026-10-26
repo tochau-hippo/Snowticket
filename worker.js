@@ -98,19 +98,32 @@ function historyDetail(changes) {
   }).join(" | ");
 }
 function trackSoldOut(kv, snapshot, now) {
-  // Preserves the existing rule: no status-1 seats for 12 minutes.
-  // This is not a new guarantee that all seats are status 3/4.
-  const pending = kv.pending_sold_out ||= {}, official = kv.official_sold_out ||= {};
-  const conditions = new Map(snapshot.zones.map(z => [z.name, z.total > 0 && z.available === 0]));
-  conditions.set("ALL_SHOW", snapshot.total_available === 0 && snapshot.total_sold > 0);
+  // Rule v2: sold-out means every seat is status 3 or 4. No waiting period.
+  // On migration, old no-available/pending times are not proof of a 3/4 sell-out.
+  if (kv.sold_out_rule_version !== 2) {
+    if (!kv.sold_out_backup_v1) {
+      kv.sold_out_backup_v1 = {
+        official: {...(kv.official_sold_out || {})},
+        pending: {...(kv.pending_sold_out || {})},
+      };
+    }
+    kv.official_sold_out = {};
+    kv.sold_out_rule_version = 2;
+  }
+  kv.pending_sold_out = {}; // Compatibility with the old response schema only.
+  const official = kv.official_sold_out ||= {};
+  const conditions = new Map(snapshot.zones.map(z => [z.name, z.total > 0 && z.sold === z.total]));
+  const total = snapshot.zones.reduce((n, z) => n + z.total, 0);
+  conditions.set("ALL_SHOW", total > 0 && snapshot.total_sold === total);
+  for (const key of Object.keys(official)) {
+    if (!conditions.get(key)) delete official[key];
+  }
   for (const [key, condition] of conditions) {
-    if (!condition) { delete pending[key]; delete official[key]; continue; }
-    if (!Object.hasOwn(pending, key)) pending[key] = now;
-    if (now - pending[key] >= 12 * 60000 && !official[key]) official[key] = vnTime(pending[key]);
+    if (condition && !Object.hasOwn(official, key)) official[key] = vnTime(now);
   }
 }
 export async function updateTicketData(env, now = Date.now()) {
-  // On validation/network errors: no writes, no false history, no sold-out timer changes.
+  // On validation/network errors: no writes, no false history, no sold-out state changes.
   const {text} = await sourceResponse();
   const snapshot = makeSnapshot(JSON.parse(text));
   const raw = await env.TICKET_KV.get(KV_KEY);
